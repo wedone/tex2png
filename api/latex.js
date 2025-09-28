@@ -92,8 +92,9 @@ module.exports = async function handler(req, res) {
   let browser = null
   
   try {
-    // 允许通过 ?engine=mathjax 强制使用无浏览器渲染
-    if (engine === 'mathjax') {
+    // 引擎选择：mathjax / puppeteer / auto(默认)
+    const engineMode = (engine || 'auto').toLowerCase()
+    if (engineMode === 'mathjax') {
       const png = await renderPNGWithMathJax(tex, { displayMode, color, bg, fontSize })
       res.setHeader('Content-Type', 'image/png')
       res.setHeader('Cache-Control', 'public, max-age=86400')
@@ -152,12 +153,12 @@ module.exports = async function handler(req, res) {
       </html>
     `
 
-    // 在 Vercel 上使用 @sparticuz/chromium 提供的可执行文件
+  // 在 Vercel 上使用 @sparticuz/chromium 提供的可执行文件
     // 配置 chromium 运行模式，关闭图形相关特性以减少依赖
     chromium.setHeadlessMode = true
     chromium.setGraphicsMode = false
 
-    const executablePath = await chromium.executablePath()
+  const executablePath = await chromium.executablePath()
 
     // 解析 @sparticuz/chromium 模块内置的 lib/bin 绝对路径
     const chromiumIndexPath = require.resolve('@sparticuz/chromium')
@@ -175,12 +176,23 @@ module.exports = async function handler(req, res) {
     ].filter(Boolean).join(':')
 
     // 可选：记录缺失库的提示，帮助诊断（不会暴露给客户端）
+    let missingChromiumLib = false
     if (process.env.VERCEL) {
       const libnspr = path.join(chromiumLib, 'libnspr4.so')
       if (!fs.existsSync(libnspr)) {
+        missingChromiumLib = true
         console.warn('[chromium] libnspr4.so not found at', libnspr)
       }
     }
+
+    // 如果处于 auto 模式，且检测到关键库缺失，则直接使用 MathJax 避免 Puppeteer 冷启失败
+    if (engineMode === 'auto' && missingChromiumLib) {
+      const png = await renderPNGWithMathJax(tex, { displayMode, color, bg, fontSize })
+      res.setHeader('Content-Type', 'image/png')
+      res.setHeader('Cache-Control', 'public, max-age=86400')
+      return res.send(png)
+    }
+    // 强制 puppeteer 时尝试启动；auto 模式在库齐全时也会尝试
     browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: { width: 1200, height: 800, deviceScaleFactor: 2 },
