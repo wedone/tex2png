@@ -44,11 +44,16 @@ module.exports = async function handler(req, res) {
   let browser = null
   
   try {
+    // 生成安全的 TeX 字符串（避免引号、反斜杠导致脚本错误）
+    const texJS = JSON.stringify(String(tex))
+    const isDisplay = String(displayMode) === 'true'
+
     // 构建完整的 HTML 页面，使用 CDN 加载 KaTeX
     const html = `
       <!DOCTYPE html>
       <html>
         <head>
+          <meta charset="utf-8" />
           <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
           <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
           <style>
@@ -57,36 +62,36 @@ module.exports = async function handler(req, res) {
               padding: 20px;
               background: ${bg === 'transparent' ? 'transparent' : (bg || 'white')}; 
               display: flex;
-              align-items: center;
               justify-content: center;
+              align-items: center;
               min-height: 100vh;
             }
             .katex { 
               color: ${color || '#000000'}; 
               font-size: ${fontSize || '32px'}; 
             }
-            .formula-container {
-              display: inline-block;
-            }
+            .formula-container { display: inline-block; }
           </style>
         </head>
         <body>
-          <div class="formula-container">
-            <div id="formula"></div>
-          </div>
+          <div class="formula-container"><div id="formula"></div></div>
           <script>
-            try {
-              const element = document.getElementById('formula');
-              katex.render('${tex.replace(/'/g, "\\'")}', element, {
-                throwOnError: false,
-                displayMode: ${displayMode === 'true'},
-                colorIsTextColor: true,
-                trust: true,
-                strict: false
-              });
-            } catch (e) {
-              document.getElementById('formula').textContent = 'Error: ' + e.message;
-            }
+            (function(){
+              try {
+                var element = document.getElementById('formula');
+                var tex = ${texJS};
+                window.katex.render(tex, element, {
+                  throwOnError: false,
+                  displayMode: ${isDisplay},
+                  colorIsTextColor: true,
+                  trust: true,
+                  strict: false
+                });
+                window.__katex_done = true;
+              } catch (e) {
+                window.__katex_error = e && e.message ? String(e.message) : 'Unknown render error';
+              }
+            })();
           </script>
         </body>
       </html>
@@ -110,8 +115,20 @@ module.exports = async function handler(req, res) {
       timeout: 30000
     })
 
-    // 等待 KaTeX 渲染完成
-    await page.waitForSelector('.katex', { timeout: 10000 })
+    // 等待 KaTeX 渲染完成或报错标记
+    const ok = await page.waitForFunction(
+      () => window.__katex_done || window.__katex_error,
+      { timeout: 15000 }
+    ).catch(() => null)
+
+    if (!ok) {
+      throw new Error('KaTeX render timeout')
+    }
+
+    const renderError = await page.evaluate(() => window.__katex_error || null)
+    if (renderError) {
+      throw new Error('KaTeX render failed: ' + renderError)
+    }
 
     // 获取公式元素
     const formulaElement = await page.$('.formula-container')
