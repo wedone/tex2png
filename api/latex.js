@@ -1,5 +1,7 @@
 const chromium = require('@sparticuz/chromium')
 const puppeteer = require('puppeteer-core')
+const path = require('path')
+const fs = require('fs')
 
 // 生成KaTeX HTML
 function renderKatexHTML(tex, opts = {}) {
@@ -104,14 +106,28 @@ module.exports = async function handler(req, res) {
 
     const executablePath = await chromium.executablePath()
 
+    // 解析 @sparticuz/chromium 模块内置的 lib/bin 绝对路径
+    const chromiumIndexPath = require.resolve('@sparticuz/chromium')
+    const chromiumBase = path.dirname(chromiumIndexPath)
+    const chromiumLib = path.join(chromiumBase, 'lib')
+    const chromiumBin = path.join(chromiumBase, 'bin')
+
     // 在 Vercel/AWS Lambda 环境中确保能找到打包的共享库
     const ldLibraryPath = [
       process.env.LD_LIBRARY_PATH || '',
-      '/var/task/node_modules/@sparticuz/chromium/lib',
-      '/var/task/node_modules/@sparticuz/chromium/bin',
+      chromiumLib,
+      chromiumBin,
       '/opt/lib',
       '/opt/bin'
     ].filter(Boolean).join(':')
+
+    // 可选：记录缺失库的提示，帮助诊断（不会暴露给客户端）
+    if (process.env.VERCEL) {
+      const libnspr = path.join(chromiumLib, 'libnspr4.so')
+      if (!fs.existsSync(libnspr)) {
+        console.warn('[chromium] libnspr4.so not found at', libnspr)
+      }
+    }
     browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: { width: 1200, height: 800, deviceScaleFactor: 2 },
