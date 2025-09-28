@@ -3,11 +3,14 @@
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
   "installCommand": "npm install && cd frontend && npm install",
+  "builds": [
+    { "src": "api/*.js", "use": "@vercel/node" },
+    { "src": "frontend/dist/**", "use": "@vercel/static" }
+  ],
   "functions": {
     "api/latex.js": {
       "maxDuration": 30,
-      "memory": 1024,
-      "runtime": "nodejs18.x"
+      "memory": 1024
     }
   },
   "rewrites": [
@@ -15,5 +18,6 @@
   ],
   "env": {
     "NODE_ENV": "production"
-  }
+  },
+  "nodeVersion": "18.x"
 }
