@@ -5,9 +5,13 @@
   "installCommand": "npm install && cd frontend && npm install",
   "functions": {
     "api/latex.js": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "memory": 1024
     }
   },
+  "rewrites": [
+    { "source": "/((?!api).*)", "destination": "/index.html" }
+  ],
   "env": {
     "NODE_ENV": "production"
   }

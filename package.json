@@ -10,7 +10,8 @@
     "start": "npm run dev"
   },
   "dependencies": {
-    "puppeteer": "^21.3.8"
+    "@sparticuz/chromium": "^126.0.0",
+    "puppeteer-core": "^22.15.0"
   },
   "engines": {
     "node": ">=18.0.0"

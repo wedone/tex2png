@@ -1,4 +1,5 @@
-const puppeteer = require('puppeteer')
+const chromium = require('@sparticuz/chromium')
+const puppeteer = require('puppeteer-core')
 
 // 生成KaTeX HTML
 function renderKatexHTML(tex, opts = {}) {
@@ -23,7 +24,7 @@ function renderKatexHTML(tex, opts = {}) {
   `
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // 设置 CORS 头
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
@@ -91,19 +92,14 @@ export default async function handler(req, res) {
       </html>
     `
 
-    // 启动 Puppeteer
+    // 在 Vercel 上使用 @sparticuz/chromium 提供的可执行文件
+    const executablePath = await chromium.executablePath()
     browser = await puppeteer.launch({
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-gpu'
-      ],
-      headless: true
+      args: chromium.args,
+      defaultViewport: { width: 1200, height: 800, deviceScaleFactor: 2 },
+      executablePath,
+      headless: chromium.headless,
+      ignoreHTTPSErrors: true
     })
 
     const page = await browser.newPage()
@@ -139,10 +135,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Render error:', error)
-    res.status(500).json({ 
-      error: 'Render error: ' + error.message,
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    })
+    res.status(500).send('Render error: ' + (error?.message || 'Unknown error'))
   } finally {
     if (browser) {
       await browser.close()
