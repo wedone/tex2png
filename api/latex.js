@@ -98,13 +98,30 @@ module.exports = async function handler(req, res) {
     `
 
     // 在 Vercel 上使用 @sparticuz/chromium 提供的可执行文件
+    // 配置 chromium 运行模式，关闭图形相关特性以减少依赖
+    chromium.setHeadlessMode = true
+    chromium.setGraphicsMode = false
+
     const executablePath = await chromium.executablePath()
+
+    // 在 Vercel/AWS Lambda 环境中确保能找到打包的共享库
+    const ldLibraryPath = [
+      process.env.LD_LIBRARY_PATH || '',
+      '/var/task/node_modules/@sparticuz/chromium/lib',
+      '/var/task/node_modules/@sparticuz/chromium/bin',
+      '/opt/lib',
+      '/opt/bin'
+    ].filter(Boolean).join(':')
     browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: { width: 1200, height: 800, deviceScaleFactor: 2 },
       executablePath,
       headless: chromium.headless,
-      ignoreHTTPSErrors: true
+      ignoreHTTPSErrors: true,
+      env: {
+        ...process.env,
+        LD_LIBRARY_PATH: ldLibraryPath
+      }
     })
 
     const page = await browser.newPage()

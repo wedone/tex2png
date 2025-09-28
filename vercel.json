@@ -6,7 +6,8 @@
   "functions": {
     "api/latex.js": {
       "maxDuration": 30,
-      "memory": 1024
+      "memory": 1024,
+      "runtime": "nodejs18.x"
     }
   },
   "rewrites": [
