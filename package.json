@@ -1,0 +1,25 @@
+{
+  "name": "tex2png",
+  "version": "1.0.0",
+  "description": "KaTeX 公式转 PNG 转换器 - 支持单公式和混合文本转换",
+  "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "build": "cd frontend && npm install && npm run build",
+    "dev:backend": "npm run dev --prefix backend",
+    "install:all": "npm install && cd frontend && npm install",
+    "start": "npm run dev"
+  },
+  "dependencies": {
+    "puppeteer": "^21.3.8"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wedone/tex2png.git"
+  },
+  "keywords": ["katex", "latex", "png", "formula", "math", "converter"],
+  "author": "wedone",
+  "license": "MIT"
+}

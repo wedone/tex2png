@@ -1,0 +1,14 @@
+{
+  "name": "tex2png-backend",
+  "version": "1.0.0",
+  "description": "KaTeX公式转PNG图片API服务",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "puppeteer": "^21.3.8",
+    "katex": "^0.16.9"
+  }
+}
