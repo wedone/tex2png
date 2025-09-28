@@ -40,6 +40,11 @@ https://your-app.vercel.app/api/latex?tex=\frac{a}{b}&displayMode=true&color=blu
 | `fontSize` | 字体大小 | `32px` | `24px` |
 | `color` | 文字颜色 | `#000000` | `red`/`#ff0000` |
 | `bg` | 背景颜色 | `transparent` | `white`/`#ffffff` |
+| `engine` | 渲染引擎（可选） | `auto` | `mathjax` |
+
+说明：
+- 默认情况下，服务会优先使用无头浏览器（Puppeteer + KaTeX）渲染；若环境不支持，会自动回退到 MathJax（SVG）+ Sharp 栈，无需改动调用方式。
+- 你也可以通过 `engine=mathjax` 强制启用回退引擎，避免无头浏览器冷启动或环境依赖问题。
 
 ## 🛠️ 本地开发
 

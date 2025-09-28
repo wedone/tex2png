@@ -2,6 +2,52 @@ const chromium = require('@sparticuz/chromium')
 const puppeteer = require('puppeteer-core')
 const path = require('path')
 const fs = require('fs')
+let sharp // lazy require to reduce cold start; will load on demand
+
+// Lazy loaders for MathJax (server-side TeX -> SVG)
+let mjLiteAdaptor, mjRegisterHTMLHandler, mjMathJax, mjTeX, mjSVG, mjAllPackages
+function ensureMathJax() {
+  if (!mjMathJax) {
+    mjMathJax = require('mathjax-full/js/mathjax').mathjax
+    mjTeX = require('mathjax-full/js/input/tex').TeX
+    mjAllPackages = require('mathjax-full/js/input/tex/AllPackages').AllPackages
+    mjSVG = require('mathjax-full/js/output/svg').SVG
+    mjLiteAdaptor = require('mathjax-full/js/adaptors/liteAdaptor').liteAdaptor
+    mjRegisterHTMLHandler = require('mathjax-full/js/handlers/html').RegisterHTMLHandler
+  }
+}
+
+async function renderPNGWithMathJax(tex, { displayMode, color, bg, fontSize }) {
+  ensureMathJax()
+  const adaptor = mjLiteAdaptor()
+  mjRegisterHTMLHandler(adaptor)
+
+  const sizePx = parseInt(String(fontSize || '32px'), 10) || 32
+  const isDisplay = String(displayMode) === 'true'
+  const doc = mjMathJax.document('', {
+    InputJax: new mjTeX({ packages: mjAllPackages }),
+    OutputJax: new mjSVG({ fontCache: 'none' })
+  })
+
+  const node = doc.convert(String(tex), { display: isDisplay, em: sizePx, ex: sizePx / 2, containerWidth: 80 * sizePx })
+  let svg = adaptor.outerHTML(node)
+  // 应用颜色到根 svg（MathJax 使用 currentColor）
+  const textColor = color || '#000000'
+  if (svg.includes('<svg')) {
+    svg = svg.replace('<svg', `<svg style="color:${textColor}"`)
+  }
+
+  // 懒加载 sharp
+  if (!sharp) sharp = require('sharp')
+  const density = 220 // DPI for SVG rasterization
+  let pipeline = sharp(Buffer.from(svg), { density })
+
+  if (bg && bg !== 'transparent') {
+    pipeline = pipeline.flatten({ background: bg })
+  }
+  const png = await pipeline.png().toBuffer()
+  return png
+}
 
 // 生成KaTeX HTML
 function renderKatexHTML(tex, opts = {}) {
@@ -37,7 +83,7 @@ module.exports = async function handler(req, res) {
     return
   }
 
-  const { tex, displayMode, color, bg, fontSize } = req.query
+  const { tex, displayMode, color, bg, fontSize, engine } = req.query
 
   if (!tex) {
     return res.status(400).json({ error: 'Missing tex parameter' })
@@ -46,6 +92,13 @@ module.exports = async function handler(req, res) {
   let browser = null
   
   try {
+    // 允许通过 ?engine=mathjax 强制使用无浏览器渲染
+    if (engine === 'mathjax') {
+      const png = await renderPNGWithMathJax(tex, { displayMode, color, bg, fontSize })
+      res.setHeader('Content-Type', 'image/png')
+      res.setHeader('Cache-Control', 'public, max-age=86400')
+      return res.send(png)
+    }
     // 生成安全的 TeX 字符串（避免引号、反斜杠导致脚本错误）
     const texJS = JSON.stringify(String(tex))
     const isDisplay = String(displayMode) === 'true'
@@ -184,8 +237,17 @@ module.exports = async function handler(req, res) {
     res.send(image)
 
   } catch (error) {
-    console.error('Render error:', error)
-    res.status(500).send('Render error: ' + (error?.message || 'Unknown error'))
+    console.error('Render error (puppeteer path):', error)
+    // 回退到 MathJax + Sharp 渲染，确保功能可用
+    try {
+      const png = await renderPNGWithMathJax(tex, { displayMode, color, bg, fontSize })
+      res.setHeader('Content-Type', 'image/png')
+      res.setHeader('Cache-Control', 'public, max-age=86400')
+      return res.send(png)
+    } catch (e2) {
+      console.error('Render error (mathjax fallback):', e2)
+      res.status(500).send('Render error: ' + (e2?.message || error?.message || 'Unknown error'))
+    }
   } finally {
     if (browser) {
       await browser.close()
