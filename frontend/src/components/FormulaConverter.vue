@@ -190,7 +190,7 @@ export default {
         }
 
         // 生成图片 URL（开发环境用代理，生产环境直接调用）
-        this.imageUrl = `/api/latex?${params.toString()}`
+        this.imageUrl = `/latex?${params.toString()}`
         
       } catch (err) {
         this.error = '生成图片失败: ' + (err.response?.data || err.message)

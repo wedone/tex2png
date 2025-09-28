@@ -64,6 +64,17 @@
                 公式透明背景
               </label>
             </div>
+
+            <div class="param-group">
+              <label for="global-img-height">图片高度：</label>
+              <input
+                id="global-img-height"
+                type="text"
+                v-model="globalParams.imgHeight"
+                placeholder="如 1em、32px，可选"
+                @input="debouncedParse"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -163,7 +174,8 @@ export default {
       globalParams: {
         fontSize: 24,
         color: '#000000',
-        transparent: true
+        transparent: true,
+        imgHeight: '' // 新增图片高度参数
       },
       examples: [
         {
@@ -213,8 +225,8 @@ export default {
       const result = []
       let lastIndex = 0
 
-      // 正则表达式匹配 $...$ 和 $$...$$ 
-      const mathRegex = /\\$\\$(.*?)\\$\\$|\\$(.*?)\\$/g
+      // 正则表达式匹配 $...$ 和 $$...$$ ，支持多行
+      const mathRegex = /\$\$([\s\S]+?)\$\$|\$([^\$]+?)\$/g
       let match
 
       while ((match = mathRegex.exec(text)) !== null) {
@@ -270,8 +282,11 @@ export default {
       if (this.globalParams.transparent) {
         params.append('bg', 'transparent')
       }
+      if (this.globalParams.imgHeight) {
+        params.append('height', this.globalParams.imgHeight)
+      }
 
-      return `/api/latex?${params.toString()}`
+      return `/latex?${params.toString()}`
     },
 
     useExample(content) {
@@ -470,6 +485,21 @@ export default {
   border: 1px solid #ddd;
   border-radius: 4px;
   cursor: pointer;
+}
+
+.param-group input[type="text"] {
+  flex: 1;
+  padding: 0.5rem;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  transition: border-color 0.3s ease;
+}
+
+.param-group input[type="text"]:focus {
+  outline: none;
+  border-color: #667eea;
 }
 
 .range-value {
