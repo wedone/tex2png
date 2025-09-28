@@ -1,6 +1,7 @@
 const express = require('express');
 const puppeteer = require('puppeteer');
 const katex = require('katex');
+const sharp = require('sharp');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,7 +18,7 @@ function renderKatexHTML(tex, opts) {
 
 // /latex?tex=...&displayMode=...&color=...&bg=...&fontSize=...
 app.get('/latex', async (req, res) => {
-  const { tex, displayMode, color, bg, fontSize } = req.query;
+  const { tex, displayMode, color, bg, fontSize, height } = req.query;
   if (!tex) return res.status(400).send('Missing tex parameter');
 
   try {
@@ -28,6 +29,7 @@ app.get('/latex', async (req, res) => {
           <style>
             body { margin:0; background:${bg||'transparent'}; }
             .katex { color: ${color||'#222'}; font-size: ${fontSize||'32px'}; }
+            #formula { display: inline-block; width: fit-content; line-height: 1; vertical-align: middle;${height ? ` height: ${height};` : ''} }
           </style>
         </head>
         <body>
@@ -39,10 +41,17 @@ app.get('/latex', async (req, res) => {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
     const element = await page.$('#formula');
-    const image = await element.screenshot({ type: 'png', omitBackground: bg === 'transparent' });
+    const boundingBox = await element.boundingBox();
+    const imageBuffer = await element.screenshot({
+      type: 'png',
+      omitBackground: bg === 'transparent',
+      clip: boundingBox
+    });
+    // 用 sharp 自动裁剪透明边缘
+    const trimmed = await sharp(imageBuffer).trim().png().toBuffer();
     await browser.close();
     res.set('Content-Type', 'image/png');
-    res.send(image);
+    res.send(trimmed);
   } catch (e) {
     res.status(500).send('Render error: ' + e.message);
   }
