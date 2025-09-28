@@ -31,10 +31,22 @@ async function renderPNGWithMathJax(tex, { displayMode, color, bg, fontSize }) {
 
   const node = doc.convert(String(tex), { display: isDisplay, em: sizePx, ex: sizePx / 2, containerWidth: 80 * sizePx })
   let svg = adaptor.outerHTML(node)
-  // 应用颜色到根 svg（MathJax 使用 currentColor）
+  // 应用颜色到根 svg（MathJax 使用 currentColor）。避免重复 style 属性导致 XML 解析错误。
   const textColor = color || '#000000'
   if (svg.includes('<svg')) {
-    svg = svg.replace('<svg', `<svg style="color:${textColor}"`)
+    svg = svg.replace(/<svg\b([^>]*)>/i, (full, attrs) => {
+      if (/style\s*=/.test(attrs)) {
+        // 合并到已有 style 尾部
+        const merged = attrs.replace(/style\s*=\s*(["'])(.*?)\1/i, (m, q, s) => {
+          const sep = s.trim().length ? '; ' : ''
+          return `style=${q}${s}${sep}color:${textColor}${q}`
+        })
+        return `<svg${merged}>`
+      } else {
+        const space = attrs && attrs.length > 0 ? '' : ''
+        return `<svg${attrs} style="color:${textColor}">`
+      }
+    })
   }
 
   // 懒加载 sharp
@@ -45,7 +57,7 @@ async function renderPNGWithMathJax(tex, { displayMode, color, bg, fontSize }) {
   if (bg && bg !== 'transparent') {
     pipeline = pipeline.flatten({ background: bg })
   }
-  const png = await pipeline.png().toBuffer()
+  const png = await pipeline.png({ compressionLevel: 9, adaptiveFiltering: true }).toBuffer()
   return png
 }
 
