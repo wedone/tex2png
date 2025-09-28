@@ -16,7 +16,7 @@
     "sharp": "^0.33.4"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "20.x"
   },
   "repository": {
     "type": "git",
