@@ -31,5 +31,18 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/tex2png-backend:latest
+          tags: ghcr.io/${{ github.repository_owner }}/tex2png:latest
           platforms: linux/amd64
+          
+      - name: Deploy to Huawei Cloud Docker
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GHCR_TOKEN }}
+            docker pull ghcr.io/${{ github.repository_owner }}/tex2png:latest
+            docker stop tex2png || true
+            docker rm tex2png || true
+            docker run -d --name tex2png -p 3001:3001 ghcr.io/${{ github.repository_owner }}/tex2png:latest          
