@@ -37,7 +37,7 @@ app.get('/latex', async (req, res) => {
         </body>
       </html>
     `;
-    const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
+    const browser = await puppeteer.launch({ headless: "new", args: ['--no-sandbox'] });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
     const element = await page.$('#formula');
