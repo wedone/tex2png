@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>混合文本公式图片生成器 (HTML+JS 纯前端版)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+      background: #f4f6fa;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 32px auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      padding: 32px 24px 40px 24px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .header h2 {
+      color: #2c3e50;
+      margin-bottom: 0.5rem;
+    }
+    .header p {
+      color: #666;
+      font-size: 1.1rem;
+    }
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+    @media (max-width: 900px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+    .input-section, .preview-section {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      padding: 1.5rem;
+    }
+    .form-group { margin-bottom: 1.5rem; }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #34495e;
+    }
+    .text-input {
+      width: 100%;
+      height: 160px;
+      padding: 0.75rem;
+      border: 2px solid #e9ecef;
+      border-radius: 6px;
+      font-size: 15px;
+      line-height: 1.5;
+      resize: vertical;
+      transition: border-color 0.3s;
+    }
+    .text-input:focus { border-color: #667eea; outline: none; }
+    .input-help {
+      margin-top: 0.5rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+    .input-help code {
+      background: #e9ecef;
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+    }
+    .global-params h3 {
+      margin-bottom: 1rem;
+      color: #2c3e50;
+    }
+    .params-grid {
+      display: grid;
+      gap: 1rem;
+    }
+    .param-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .param-group label { font-weight: 500; min-width: 100px; }
+    .param-group input[type="range"] { flex: 1; }
+    .param-group input[type="color"] {
+      width: 40px; height: 30px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;
+    }
+    .param-group input[type="text"] {
+      flex: 1; padding: 0.5rem; border: 2px solid #e9ecef; border-radius: 6px; font-size: 14px; transition: border-color 0.3s;
+    }
+    .param-group input[type="text"]:focus { border-color: #667eea; outline: none; }
+    .range-value { font-size: 0.9rem; color: #666; min-width: 40px; }
+    .preview-section h3 { margin-bottom: 1rem; color: #2c3e50; }
+    .loading { text-align: center; padding: 2rem; }
+    .loading-spinner {
+      width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .preview-container { margin-bottom: 1rem; }
+    .rendered-content {
+      padding: 1.5rem; background: #f8f9fa; border-radius: 6px; line-height: 1.6; margin-bottom: 1rem; min-height: 120px;
+    }
+    .content-item { display: inline; }
+    .content-item.display-math { display: block; }
+    .text-content { white-space: pre-line; }
+    .inline-formula { vertical-align: middle; margin: 0 2px; }
+    .display-formula-container { text-align: center; margin: 1rem 0; }
+    .display-formula { max-width: 100%; }
+    .preview-actions {
+      display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+    }
+    .btn {
+      padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.3s;
+    }
+    .btn-primary { background: #667eea; color: white; }
+    .btn-primary:hover { background: #5a67d8; }
+    .btn-secondary { background: #6c757d; color: white; }
+    .btn-secondary:hover { background: #5a6268; }
+    .empty-state { text-align: center; color: #666; font-style: italic; padding: 2rem; }
+    .examples-section {
+      background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 2rem;
+    }
+    .examples-section h3 { margin-bottom: 1rem; color: #2c3e50; }
+    .examples-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;
+    }
+    .example-btn {
+      background: white; border: 2px solid #e9ecef; border-radius: 6px; padding: 1rem; cursor: pointer; transition: all 0.3s; text-align: left;
+    }
+    .example-btn:hover { border-color: #667eea; background: #f8f9ff; }
+    .example-name { display: block; font-weight: 600; color: #2c3e50; margin-bottom: 0.5rem; }
+    .example-preview { font-size: 0.9rem; color: #666; line-height: 1.4; }
+    @media (max-width: 768px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .examples-grid { grid-template-columns: 1fr; }
+      .preview-actions { flex-direction: column; }
+      .param-group { flex-direction: column; align-items: flex-start; }
+      .param-group input[type="range"] { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>混合文本公式图片生成器</h2>
+      <p>输入包含文本和 LaTeX 公式的内容，自动识别并转换公式为图片</p>
+    </div>
+    <div class="main-grid">
+      <div class="input-section">
+        <div class="form-group">
+          <label for="text-input">混合文本内容：</label>
+          <textarea id="text-input" class="text-input" placeholder="例如：这是普通文本 $E=mc^2$ 这是行内公式，$$\\frac{a}{b}$$ 这是块级公式。"></textarea>
+          <div class="input-help">
+            <p><strong>语法说明：</strong></p>
+            <ul>
+              <li><code>$公式$</code> - 行内公式</li>
+              <li><code>$$公式$$</code> - 块级公式（独立成行）</li>
+              <li>例如：<code>$x^2$</code> 或 <code>$$\sum_{i=1}^n i$$</code></li>
+            </ul>
+          </div>
+        </div>
+        <div class="global-params">
+          <h3>全局渲染参数</h3>
+          <div class="params-grid">
+            <div class="param-group">
+              <label for="font-size">公式字体大小：</label>
+              <input id="font-size" type="range" min="16" max="48" value="24">
+              <span class="range-value" id="font-size-value">24px</span>
+            </div>
+            <div class="param-group">
+              <label for="color">公式颜色：</label>
+              <input id="color" type="color" value="#000000">
+            </div>
+            <div class="param-group">
+              <label><input type="checkbox" id="transparent" checked> 公式透明背景</label>
+            </div>
+            <div class="param-group">
+              <label for="img-height">图片高度：</label>
+              <input id="img-height" type="text" placeholder="如 1em、32px，可选">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="preview-section">
+        <h3>预览结果</h3>
+        <div id="loading" class="loading" style="display:none;">
+          <div class="loading-spinner"></div>
+          <p>正在解析和生成图片...</p>
+        </div>
+        <div id="preview-container" class="preview-container" style="display:none;">
+          <div class="rendered-content" id="rendered-content"></div>
+          <div class="preview-actions">
+            <button class="btn btn-primary" id="download-btn">📥 下载为图片</button>
+            <button class="btn btn-secondary" id="copy-md-btn">📋 复制为 Markdown</button>
+            <button class="btn btn-secondary" id="export-html-btn">💾 导出为 HTML</button>
+          </div>
+        </div>
+        <div id="empty-state" class="empty-state">👆 请在上方输入混合文本以开始转换</div>
+      </div>
+    </div>
+    <div class="examples-section">
+      <h3>示例内容</h3>
+      <div class="examples-grid" id="examples-grid"></div>
+    </div>
+  </div>
+  <script>
+    // ====== 配置 ======
+    // API 地址（如需部署到其他后端，请修改此处）
+    const API_BASE = (window.VITE_API_BASE || window.API_BASE || '')
+      || (window.location.origin.includes('vercel.app') ? '' : 'http://localhost:3001');
+    // ===================
+
+    // 示例内容
+    const examples = [
+      {
+        name: '数学定理',
+        preview: '勾股定理：$a^2 + b^2 = c^2$',
+        content: '勾股定理是平面几何中的重要定理：$a^2 + b^2 = c^2$。\n\n其中 $a$ 和 $b$ 是直角三角形的两直角边，$c$ 是斜边。'
+      },
+      {
+        name: '物理公式',
+        preview: '爱因斯坦质能方程...',
+        content: '爱因斯坦的质能方程是现代物理学的重要公式：\n\n$$E = mc^2$$\n\n其中 $E$ 是能量，$m$ 是质量，$c$ 是光速。'
+      },
+      {
+        name: '统计学概念',
+        preview: '正态分布的概率密度函数...',
+        content: '正态分布的概率密度函数为：\n\n$$f(x) = \\frac{1}{\\sigma\\sqrt{2\\pi}} e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}$$\n\n其中 $\\mu$ 是均值，$\\sigma$ 是标准差。'
+      }
+    ];
+
+    // ====== DOM ======
+    const textInput = document.getElementById('text-input');
+    const fontSizeInput = document.getElementById('font-size');
+    const fontSizeValue = document.getElementById('font-size-value');
+    const colorInput = document.getElementById('color');
+    const transparentInput = document.getElementById('transparent');
+    const imgHeightInput = document.getElementById('img-height');
+    const loadingDiv = document.getElementById('loading');
+    const previewContainer = document.getElementById('preview-container');
+    const renderedContent = document.getElementById('rendered-content');
+    const emptyState = document.getElementById('empty-state');
+    const downloadBtn = document.getElementById('download-btn');
+    const copyMdBtn = document.getElementById('copy-md-btn');
+    const exportHtmlBtn = document.getElementById('export-html-btn');
+    const examplesGrid = document.getElementById('examples-grid');
+
+    // ====== 状态 ======
+    let parsedContent = [];
+    let debounceTimer = null;
+
+    // ====== 事件绑定 ======
+    textInput.addEventListener('input', debouncedParse);
+    fontSizeInput.addEventListener('input', () => {
+      fontSizeValue.textContent = fontSizeInput.value + 'px';
+      debouncedParse();
+    });
+    colorInput.addEventListener('input', debouncedParse);
+    transparentInput.addEventListener('change', debouncedParse);
+    imgHeightInput.addEventListener('input', debouncedParse);
+    downloadBtn.addEventListener('click', downloadAsImage);
+    copyMdBtn.addEventListener('click', copyAsMarkdown);
+    exportHtmlBtn.addEventListener('click', exportAsHtml);
+
+    // 示例按钮
+    examples.forEach(example => {
+      const btn = document.createElement('button');
+      btn.className = 'example-btn';
+      btn.innerHTML = `<span class="example-name">${example.name}</span><div class="example-preview">${example.preview}</div>`;
+      btn.onclick = () => {
+        textInput.value = example.content;
+        debouncedParse();
+      };
+      examplesGrid.appendChild(btn);
+    });
+
+    // ====== 解析与渲染 ======
+    function debouncedParse() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(parseContent, 600);
+    }
+
+    async function parseContent() {
+      const input = textInput.value.trim();
+      if (!input) {
+        parsedContent = [];
+        renderedContent.innerHTML = '';
+        previewContainer.style.display = 'none';
+        emptyState.style.display = '';
+        return;
+      }
+      loadingDiv.style.display = '';
+      previewContainer.style.display = 'none';
+      emptyState.style.display = 'none';
+      try {
+        parsedContent = await parseAndRender(input);
+        renderPreview();
+      } catch (e) {
+        renderedContent.innerHTML = '<span style="color:red">解析失败: ' + e + '</span>';
+      } finally {
+        loadingDiv.style.display = 'none';
+      }
+    }
+
+    async function parseAndRender(text) {
+      const result = [];
+      let lastIndex = 0;
+      const mathRegex = /\$\$([\s\S]+?)\$\$|\$([^\$]+?)\$/g;
+      let match;
+      while ((match = mathRegex.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+          const textContent = text.substring(lastIndex, match.index);
+          if (textContent.trim()) {
+            result.push({ type: 'text', content: textContent });
+          }
+        }
+        const isDisplay = !!match[1];
+        const formula = match[1] || match[2];
+        if (formula.trim()) {
+          const imageUrl = await generateFormulaImage(formula, isDisplay);
+          result.push({ type: isDisplay ? 'display-math' : 'inline-math', content: formula, imageUrl });
+        }
+        lastIndex = mathRegex.lastIndex;
+      }
+      if (lastIndex < text.length) {
+        const textContent = text.substring(lastIndex);
+        if (textContent.trim()) {
+          result.push({ type: 'text', content: textContent });
+        }
+      }
+      return result;
+    }
+
+    async function generateFormulaImage(formula, isDisplay) {
+      const params = new URLSearchParams({
+        tex: formula,
+        displayMode: isDisplay.toString(),
+        fontSize: fontSizeInput.value + 'px',
+        color: colorInput.value
+      });
+      if (transparentInput.checked) params.append('bg', 'transparent');
+      if (imgHeightInput.value) params.append('height', imgHeightInput.value);
+      return `${API_BASE}/latex?${params.toString()}`;
+    }
+
+    function renderPreview() {
+      renderedContent.innerHTML = '';
+      parsedContent.forEach((item, idx) => {
+        if (item.type === 'text') {
+          const span = document.createElement('span');
+          span.className = 'text-content';
+          span.innerHTML = item.content.replace(/\n/g, '<br>');
+          renderedContent.appendChild(span);
+        } else if (item.type === 'inline-math') {
+          const img = document.createElement('img');
+          img.src = item.imageUrl;
+          img.alt = item.content;
+          img.className = 'inline-formula';
+          img.onerror = () => img.style.opacity = 0.3;
+          renderedContent.appendChild(img);
+        } else if (item.type === 'display-math') {
+          const div = document.createElement('div');
+          div.className = 'display-formula-container';
+          const img = document.createElement('img');
+          img.src = item.imageUrl;
+          img.alt = item.content;
+          img.className = 'display-formula';
+          img.onerror = () => img.style.opacity = 0.3;
+          div.appendChild(img);
+          renderedContent.appendChild(div);
+        }
+      });
+      previewContainer.style.display = '';
+      emptyState.style.display = 'none';
+    }
+
+    // ====== 操作按钮功能 ======
+    function downloadAsImage() {
+      alert('下载为图片功能开发中...\n建议使用截图工具或导出 HTML。');
+    }
+    function copyAsMarkdown() {
+      let markdown = '';
+      parsedContent.forEach(item => {
+        if (item.type === 'text') markdown += item.content;
+        else if (item.type === 'inline-math') markdown += `$${item.content}$`;
+        else if (item.type === 'display-math') markdown += `$$${item.content}$$`;
+      });
+      navigator.clipboard.writeText(markdown).then(() => {
+        alert('Markdown 内容已复制到剪贴板');
+      }, () => {
+        alert('复制失败');
+      });
+    }
+    function exportAsHtml() {
+      let html = `<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\"UTF-8\"><title>导出的混合文本</title><style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.6;padding:2rem;}.inline-formula{vertical-align:middle;}.display-formula-container{text-align:center;margin:1rem 0;}</style></head><body>`;
+      parsedContent.forEach(item => {
+        if (item.type === 'text') html += `<span>${item.content.replace(/\n/g, '<br>')}</span>`;
+        else if (item.type === 'inline-math') html += `<img src=\"${item.imageUrl}\" alt=\"${item.content}\" class=\"inline-formula\">`;
+        else if (item.type === 'display-math') html += `<div class=\"display-formula-container\"><img src=\"${item.imageUrl}\" alt=\"${item.content}\"></div>`;
+      });
+      html += '</body></html>';
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `mixed-content-${Date.now()}.html`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ====== 默认示例 ======
+    textInput.value = '这是一个包含数学公式的例子：$E=mc^2$ 是著名的质能方程。\n\n下面是一个块级公式：\n\n$$\\frac{d}{dx}\\int_{a}^{x} f(t)dt = f(x)$$';
+    debouncedParse();
+  </script>
+</body>
+</html>
