@@ -3,7 +3,7 @@ name: Build and Push Docker image to GHCR
 on:
   push:
     branches: [ docker ]
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 jobs:
   build-and-push:
@@ -33,7 +33,7 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/tex2png:latest
           platforms: linux/amd64
-          
+
       - name: Deploy to Huawei Cloud Docker
         uses: appleboy/ssh-action@v1.0.3
         with:
