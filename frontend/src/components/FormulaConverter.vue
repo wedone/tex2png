@@ -189,8 +189,9 @@ export default {
           params.append('bg', 'transparent')
         }
 
-        // 生成图片 URL（开发环境用代理，生产环境直接调用）
-        this.imageUrl = `/latex?${params.toString()}`
+        // 生成图片 URL（支持环境变量API前缀）
+        const apiBase = import.meta.env.VITE_API_BASE || ''
+        this.imageUrl = `${apiBase}/latex?${params.toString()}`
         
       } catch (err) {
         this.error = '生成图片失败: ' + (err.response?.data || err.message)

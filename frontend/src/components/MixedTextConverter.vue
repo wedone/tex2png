@@ -286,7 +286,8 @@ export default {
         params.append('height', this.globalParams.imgHeight)
       }
 
-      return `/latex?${params.toString()}`
+      const apiBase = import.meta.env.VITE_API_BASE || ''
+      return `${apiBase}/latex?${params.toString()}`
     },
 
     useExample(content) {
