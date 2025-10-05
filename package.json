@@ -1,0 +1,39 @@
+{
+  "name": "tex2png",
+  "version": "1.0.0",
+  "description": "LaTeX 公式转图片工具 - 混合内容处理器",
+  "main": "public/index.html",
+  "type": "module",
+  "scripts": {
+    "dev": "serve public -l 3000",
+    "build": "echo 'No build process needed for static files'",
+    "start": "serve public -p 3000",
+    "preview": "serve public"
+  },
+  "dependencies": {
+    "katex": "^0.16.8",
+    "html2canvas": "^1.4.1"
+  },
+  "devDependencies": {
+    "serve": "^14.2.1"
+  },
+  "keywords": [
+    "latex",
+    "math", 
+    "formula",
+    "png",
+    "image",
+    "katex",
+    "mixed-content",
+    "converter"
+  ],
+  "author": "wedone",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wedone/tex2png.git"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
