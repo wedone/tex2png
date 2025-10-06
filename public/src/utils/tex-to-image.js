@@ -1,5 +1,18 @@
 export class TexToImage {
   static async convertToImageUrl(latex, options = {}) {
+    // 如果启用了 serverRender，直接返回 server API 的 URL（无需在前端生成 blob）
+    if (options.serverRender) {
+      // encode params minimally
+      const params = new URLSearchParams();
+      params.set('latex', latex);
+      if (options.displayMode) params.set('display', '1');
+      if (options.fontSize) params.set('fontSize', String(options.fontSize));
+      if (options.padding !== undefined) params.set('padding', String(options.padding));
+      // 返回服务器可直接访问的图片 URL
+      const url = `/api/render?${params.toString()}`;
+      return { url, size: 0, type: 'image/png', revoke: () => {} };
+    }
+
     // 1. 渲染为 Canvas
     const canvas = await this.renderToCanvas(latex, options);
     

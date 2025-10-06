@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "katex": "^0.16.8",
-    "html2canvas": "^1.4.1"
+    "html2canvas": "^1.4.1",
+    "@resvg/resvg-js": "^2.0.0"
   },
   "devDependencies": {
     "serve": "^14.2.1"
