@@ -128,13 +128,14 @@ body {
 
 .formula-inline {
   vertical-align: middle;
-  margin: 0 2px;
+  margin: 0;
   max-height: 2em;
 }
 
 .formula-display {
   display: block;
-  margin: 15px auto;
+  margin: 2px auto;  
+  vertical-align: middle;
   text-align: center;
 }
 

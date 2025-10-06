@@ -56,10 +56,19 @@ export class MixedContentProcessor {
       const processedFormulas = [];
       let formulaCount = 0;
 
-      for (const part of parts) {
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        
         if (part.type === 'text') {
           // 普通文本，转义HTML并处理换行
-          processedHtml += this.escapeHtml(part.content).replace(/\n/g, '<br>');
+          let content = part.content;
+          
+          // 如果前一个是行间公式，去掉开头的所有连续换行
+          if (i > 0 && parts[i - 1].type === 'block') {
+            content = content.replace(/^\n+/, '');
+          }
+          
+          processedHtml += this.escapeHtml(content).replace(/\n/g, '<br>');
         } else if (part.type === 'inline' || part.type === 'block') {
           // 公式部分，生成图片
           const imageResult = await this.generateFormulaImage({
