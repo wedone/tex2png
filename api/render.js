@@ -1,7 +1,7 @@
-import katex from 'katex';
-import { Resvg } from '@resvg/resvg-js';
+const katex = require('katex');
+const { Resvg } = require('@resvg/resvg-js');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   try {
     // 支持 GET 或 POST(JSON)
     const params = req.method === 'POST' && req.headers['content-type'] && req.headers['content-type'].includes('application/json')

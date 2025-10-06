@@ -1,6 +1,6 @@
-import katex from 'katex';
+const katex = require('katex');
 
-export default function handler(req, res) {
+module.exports = function handler(req, res) {
   try {
     const params = req.method === 'POST' && req.headers['content-type'] && req.headers['content-type'].includes('application/json')
       ? JSON.parse(req.body || '{}')
