@@ -15,6 +15,12 @@ export class MixedContentEditor {
             <h3>📝 输入区域</h3>
             <small>支持普通文本 + LaTeX 公式混合输入</small>
           </div>
+          <div class="convert-panel" style="display: flex; align-items: center; gap: 16px; margin-bottom: 10px;">
+            <label style="margin:0;"><input type="checkbox" id="auto-convert" checked> 自动转换</label>
+            <div id="convert-btn-group" style="display:none;">
+              <button id="manual-convert" type="button">转换</button>
+            </div>
+          </div>
           <textarea id="mixed-input" placeholder="请输入内容，例如：
 
 这是普通文本。
@@ -45,13 +51,14 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
               <label><input type="checkbox" id="transparent-bg" checked> 透明背景</label>
             </div>
             <div class="option-group">
-              <label>内边距: <span id="padding-value">4</span>px</label>
-              <input type="range" id="padding" min="0" max="20" value="4">
+              <label>内边距: <span id="padding-value">1</span>px</label>
+              <input type="range" id="padding" min="0" max="20" value="1">
             </div>
             <div class="option-group">
               <label>图片缩放: <span id="scale-value">2</span>x</label>
               <input type="range" id="scale" min="1" max="4" value="2" step="0.5">
             </div>
+            <!-- 自动转换和转换按钮已移至输入框上方 -->
           </div>
         </div>
 
@@ -80,25 +87,54 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
     const transparentBg = document.getElementById('transparent-bg');
     const padding = document.getElementById('padding');
     const scale = document.getElementById('scale');
+    const autoConvert = document.getElementById('auto-convert');
+    const convertBtnGroup = document.getElementById('convert-btn-group');
+    const manualConvert = document.getElementById('manual-convert');
 
     // 实时预览
     const updatePreview = this.debounce(() => this.updatePreview(), 800);
 
-    input.addEventListener('input', updatePreview);
-    fontSize.addEventListener('input', () => {
+    // 事件绑定函数
+    const bindAuto = () => {
+      if (autoConvert.checked) {
+        input.addEventListener('input', updatePreview);
+        fontSize.addEventListener('input', sliderHandler);
+        textColor.addEventListener('input', updatePreview);
+        bgColor.addEventListener('input', updatePreview);
+        transparentBg.addEventListener('change', updatePreview);
+        padding.addEventListener('input', sliderHandler);
+        scale.addEventListener('input', sliderHandler);
+        convertBtnGroup.style.display = 'none';
+      } else {
+        input.removeEventListener('input', updatePreview);
+        fontSize.removeEventListener('input', sliderHandler);
+        textColor.removeEventListener('input', updatePreview);
+        bgColor.removeEventListener('input', updatePreview);
+        transparentBg.removeEventListener('change', updatePreview);
+        padding.removeEventListener('input', sliderHandler);
+        scale.removeEventListener('input', sliderHandler);
+        convertBtnGroup.style.display = '';
+      }
+    };
+
+    // sliderHandler 用于 slider 变化时刷新数值和预览
+    const sliderHandler = () => {
       this.updateSliderValues();
       updatePreview();
+    };
+
+    // 初始绑定
+    bindAuto();
+
+    // 自动转换勾选切换
+    autoConvert.addEventListener('change', () => {
+      bindAuto();
     });
-    textColor.addEventListener('input', updatePreview);
-    bgColor.addEventListener('input', updatePreview);
-    transparentBg.addEventListener('change', updatePreview);
-    padding.addEventListener('input', () => {
+
+    // 手动转换按钮
+    manualConvert.addEventListener('click', () => {
       this.updateSliderValues();
-      updatePreview();
-    });
-    scale.addEventListener('input', () => {
-      this.updateSliderValues();
-      updatePreview();
+      this.updatePreview();
     });
   }
 

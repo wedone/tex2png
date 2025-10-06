@@ -134,9 +134,10 @@ body {
 
 .formula-display {
   display: block;
-  margin: 2px auto;  
-  vertical-align: middle;
+  margin: 2px auto;
   text-align: center;
+  max-width: 50%;
+  height: auto;
 }
 
 .placeholder {
