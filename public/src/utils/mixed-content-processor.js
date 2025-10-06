@@ -86,7 +86,11 @@ export class MixedContentProcessor {
           });
 
           const imgClass = part.type === 'block' ? 'formula-display' : 'formula-inline';
-          processedHtml += `<img src="${imageResult.url}" alt="${this.escapeHtml(part.content)}" class="${imgClass}" data-formula-id="formula_${formulaCount}" />`;
+          if (part.type === 'block') {
+            processedHtml += `<div class="formula-display-wrap"><img src="${imageResult.url}" alt="${this.escapeHtml(part.content)}" class="${imgClass}" data-formula-id="formula_${formulaCount}" /></div>`;
+          } else {
+            processedHtml += `<img src="${imageResult.url}" alt="${this.escapeHtml(part.content)}" class="${imgClass}" data-formula-id="formula_${formulaCount}" />`;
+          }
           formulaCount++;
         }
       }

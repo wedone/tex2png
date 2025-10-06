@@ -129,17 +129,23 @@ body {
 .formula-inline {
   vertical-align: middle;
   margin: 0;
-  max-height: 2em;
+  max-height: 1.8em;
 }
 
+.formula-display-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  /* 让容器高度自适应缩放后图片 */
+  overflow: visible;
+}
 .formula-display {
   display: block;
-  margin: 2px auto;
-  text-align: center;
-  max-width: 50%;
+  margin: 2px 0;
+  width: auto; /* JS 将设置具体像素宽度 */
   height: auto;
 }
-
 .placeholder {
   color: #656d76;
   font-style: italic;

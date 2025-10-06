@@ -180,6 +180,8 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
             ${result.html}
           </div>
         `;
+        // 内容插入后，按图片 natural size 缩放（按原图像素的50%显示）
+        this.postProcessPreviewImages(0.5);
         
         const totalSize = result.formulas.reduce((sum, f) => sum + f.imageSize, 0);
         formulaStats.innerHTML = `
@@ -196,6 +198,35 @@ $$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
       `;
       formulaStats.innerHTML = '';
     }
+  }
+
+  // post-process: 将预览内的公式图片按原始像素尺寸等比缩放
+  postProcessPreviewImages(scale = 0.5) {
+    const preview = document.getElementById('preview-content');
+    if (!preview) return;
+    // 查找所有 formula 图像（包含 inline 和 display）
+    const imgs = preview.querySelectorAll('img.formula-inline, img.formula-display');
+    imgs.forEach(img => {
+      // 清除 CSS transform 影响，确保使用 inline width 控制布局
+      img.style.transform = '';
+      // 如果图片已经加载，直接按 naturalWidth 缩放
+      const apply = () => {
+        try {
+          const nw = img.naturalWidth || img.width;
+          if (nw && !isNaN(nw) && nw > 0) {
+            img.style.width = Math.round(nw * scale) + 'px';
+            img.style.height = 'auto';
+          }
+        } catch (e) {
+          // ignore
+        }
+      };
+      if (img.complete) {
+        apply();
+      } else {
+        img.addEventListener('load', apply, { once: true });
+      }
+    });
   }
 
   getOptions() {
