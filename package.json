@@ -7,12 +7,15 @@
   "scripts": {
     "dev": "serve public -l 3000",
     "build": "echo 'No build process needed for static files'",
-    "start": "serve public -p 3000",
-    "preview": "serve public"
+    "start": "node server.js",
+    "preview": "serve public",
+    "docker-build": "docker build -t tex2png:local ."
   },
   "dependencies": {
     "katex": "^0.16.8",
-    "html2canvas": "^1.4.1"
+    "html2canvas": "^1.4.1",
+    "@resvg/resvg-js": "^2.0.0",
+    "express": "^4.18.2"
   },
   "devDependencies": {
     "serve": "^14.2.1"
